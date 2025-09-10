@@ -45,14 +45,14 @@
         .chat-bubble-user {
             background: rgba(135, 206, 235, 0.1); /* Tinte azulado */
             align-self: flex-end;
-            max-width: 60%;
+            max-width: 70%; /* Un poco más de ancho en móvil */
             border-bottom-right-radius: 4px;
         }
 
         .chat-bubble-betel {
             background: rgba(255, 255, 255, 0.1); /* Tinte neutro */
             align-self: flex-start;
-            max-width: 75%;
+            max-width: 85%; /* Un poco más de ancho en móvil */
             border-bottom-left-radius: 4px;
         }
         
@@ -73,7 +73,6 @@
             40% { transform: scale(1.0); }
         }
 
-
         /* Oculta la barra de scroll en el chat para un diseño más limpio */
         #chat-history, .conversation-list {
           -ms-overflow-style: none;  /* IE y Edge */
@@ -83,12 +82,11 @@
           display: none; /* Chrome, Safari y Opera */
         }
 
-
         /* Input placeholder styling */
         .chat-input::placeholder {
             color: #A1A1A6;
             font-family: 'Source Sans Pro', sans-serif;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         /* Estilos para la barra lateral */
@@ -101,19 +99,67 @@
         .conversation-container.active {
             background: rgba(212, 175, 55, 0.2);
         }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        .sidebar-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Control de la expansión de la barra lateral en escritorio */
+        @media (min-width: 768px) {
+            #sidebar {
+                width: 5rem; /* w-20 */
+            }
+            #sidebar.expanded {
+                width: 18rem; /* w-72 */
+            }
+
+            #sidebar #new-chat-button-text {
+                transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out 0.1s, margin-left 0.3s ease-in-out;
+            }
+            
+            /* Estilos de la barra expandida */
+            #sidebar.expanded #new-chat-button-text {
+                opacity: 1;
+                max-width: 12rem; /* Permite que el texto se expanda */
+                margin-left: 0.75rem; /* ml-3 */
+            }
+
+            /* Animación para el botón de eliminar conversación */
+            .conversation-delete-button {
+                opacity: 0;
+                transition: opacity 0.2s ease-in-out;
+                pointer-events: none;
+            }
+
+            #sidebar.expanded .conversation-delete-button {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-row">
 
+    <div id="sidebar-backdrop" class="sidebar-backdrop md:hidden"></div>
     <!-- Barra Lateral -->
-    <aside id="sidebar" class="w-20 h-full p-4 flex flex-col gap-4 glass-effect border-r border-white/10 transition-all duration-300 ease-in-out">
+    <aside id="sidebar" class="absolute md:relative z-30 h-full p-4 flex flex-col gap-4 glass-effect border-r border-white/10 transition-all duration-300 ease-in-out -translate-x-full md:translate-x-0 w-72">
         <!-- Botón de Nuevo Chat -->
-        <button id="new-chat-button" class="w-full h-12 flex items-center justify-center rounded-lg glass-effect transition-all duration-300 ease-in-out hover:bg-white/10 overflow-hidden">
+        <button id="new-chat-button" class="w-full h-12 flex items-center justify-center rounded-lg glass-effect transition-colors duration-300 ease-in-out hover:bg-white/10 overflow-hidden px-4">
             <svg class="flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span id="new-chat-button-text" class="whitespace-nowrap max-w-0 opacity-0 transition-all duration-300 ease-in-out">Nueva Conversación</span>
+            <span id="new-chat-button-text" class="whitespace-nowrap max-w-0 opacity-0 overflow-hidden">Nueva Conversación</span>
         </button>
         <!-- Lista de Conversaciones -->
-        <div class="flex-grow conversation-list opacity-0 transition-opacity duration-200 ease-in-out delay-100 overflow-y-auto flex flex-col gap-2 pr-2">
+        <div class="flex-grow conversation-list overflow-y-auto flex flex-col gap-2 pr-2">
             <!-- Las conversaciones se insertarán aquí dinámicamente -->
         </div>
     </aside>
@@ -121,13 +167,19 @@
     <!-- Contenido Principal -->
     <div class="flex-1 flex flex-col">
         <!-- Encabezado Superior Minimalista -->
-        <header class="w-full flex items-center justify-between p-6 flex-shrink-0 z-10">
-            <!-- Izquierda: Logo y Nombre -->
-            <div class="glass-effect flex items-center gap-3 px-4 py-2 rounded-full">
-                <div class="w-[32px] h-[32px]">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3H13.5C16.5376 3 19 5.46243 19 8.5C19 11.5376 16.5376 14 13.5 14H8V3Z" fill="#D4AF37"/><path d="M8 12H14.5C16.9853 12 19 14.0147 19 16.5C19 18.9853 16.9853 21 14.5 21H8V12Z" fill="#F5F5F7"/><path d="M8 3V21" stroke="#0D0F1A" stroke-width="1.5"/><path d="M5 3V21" stroke="#F5F5F7" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <header class="w-full flex items-center justify-between p-4 md:p-6 flex-shrink-0 z-10">
+            <div class="flex items-center gap-3">
+                 <!-- Botón de Menú (Hamburguesa) para Móvil -->
+                <button id="menu-toggle" class="md:hidden glass-effect w-12 h-12 rounded-full flex items-center justify-center transition-colors hover:bg-white/10" title="Abrir menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <!-- Logo y Nombre -->
+                <div class="glass-effect flex items-center gap-3 px-4 py-2 rounded-full">
+                    <div class="w-[32px] h-[32px]">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3H13.5C16.5376 3 19 5.46243 19 8.5C19 11.5376 16.5376 14 13.5 14H8V3Z" fill="#D4AF37"/><path d="M8 12H14.5C16.9853 12 19 14.0147 19 16.5C19 18.9853 16.9853 21 14.5 21H8V12Z" fill="#F5F5F7"/><path d="M8 3V21" stroke="#0D0F1A" stroke-width="1.5"/><path d="M5 3V21" stroke="#F5F5F7" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <h1 style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 18px; color: #F5F5F7;">Betel</h1>
                 </div>
-                <h1 style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 18px; color: #F5F5F7;">Betel</h1>
             </div>
             
             <!-- Derecha: Botón de Perfil -->
@@ -139,16 +191,16 @@
         <!-- Contenedor de Chat y Animación -->
         <main class="flex-grow flex flex-col relative -mt-[104px] h-full">
             <!-- Pantalla de Bienvenida (se desvanecerá) -->
-            <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center pb-48 transition-opacity duration-500 ease-in-out opacity-100">
-                <div class="w-3/5 max-w-3xl flex flex-col items-center mb-8">
-                    <h1 class="text-[32px] font-medium text-center" style="font-family: 'Inter', sans-serif; text-shadow: 0 0 15px rgba(200, 200, 255, 0.3);">
+            <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center pb-36 md:pb-48 transition-opacity duration-500 ease-in-out opacity-100">
+                <div class="w-11/12 md:w-3/5 max-w-3xl flex flex-col items-center mb-6 md:mb-8">
+                    <h1 class="text-2xl md:text-[32px] font-medium text-center" style="font-family: 'Inter', sans-serif; text-shadow: 0 0 15px rgba(200, 200, 255, 0.3);">
                         ¿Qué quieres explorar en las Escrituras hoy?
                     </h1>
                 </div>
             </div>
 
             <!-- Vista de Chat (aparecerá) -->
-            <div id="chat-view" class="w-3/5 max-w-3xl mx-auto h-full flex flex-col pt-[104px] pb-28 px-6 transition-opacity duration-500 ease-in-out opacity-0 pointer-events-none">
+            <div id="chat-view" class="w-full md:w-3/5 max-w-3xl mx-auto h-full flex flex-col pt-[104px] pb-24 md:pb-28 px-4 sm:px-6 transition-opacity duration-500 ease-in-out opacity-0 pointer-events-none">
                 <!-- Historial de Chat -->
                 <div id="chat-history" class="flex-grow flex flex-col gap-4 overflow-y-auto px-2">
                     <!-- Los mensajes del chat se insertarán aquí -->
@@ -156,9 +208,9 @@
             </div>
 
             <!-- Input Bar (elemento que se anima) -->
-            <div id="animated-input-bar" class="absolute w-3/5 max-w-3xl left-1/2 top-1/2 -translate-x-1/2 -translate-y-12 transition-all duration-700 ease-in-out">
-                <div class="w-full h-[72px] glass-effect rounded-[24px] flex items-center px-[24px]">
-                    <input type="text" id="chat-input" class="chat-input flex-grow h-full bg-transparent border-none outline-none text-[#F5F5F7]" placeholder="Busca en las escrituras o haz una pregunta...">
+            <div id="animated-input-bar" class="absolute w-11/12 md:w-3/5 max-w-3xl left-1/2 top-1/2 -translate-x-1/2 -translate-y-12 transition-all duration-700 ease-in-out">
+                <div class="w-full h-[64px] md:h-[72px] glass-effect rounded-[24px] flex items-center px-4 md:px-[24px]">
+                    <input type="text" id="chat-input" class="chat-input flex-grow h-full bg-transparent border-none outline-none text-[#F5F5F7]" placeholder="Haz una pregunta...">
                     <button id="send-button" title="Enviar">
                         <svg id="send-icon" class="text-[#A1A1A6]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
@@ -181,12 +233,14 @@
         const newChatButton = document.getElementById('new-chat-button');
         const conversationList = document.querySelector('.conversation-list');
         const sidebar = document.getElementById('sidebar');
-        const newChatButtonText = document.getElementById('new-chat-button-text');
-
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+        
         // Estado de la aplicación
         let conversations = [];
         let activeConversationId = null;
-        let expansionTimeout; // Para el efecto de hover de la barra lateral
+        let expansionTimeout; 
+        const isDesktop = window.matchMedia('(min-width: 768px)');
 
         function init() {
             loadConversations();
@@ -214,28 +268,33 @@
             });
             sidebar.addEventListener('mouseenter', handleSidebarEnter);
             sidebar.addEventListener('mouseleave', handleSidebarLeave);
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarBackdrop.addEventListener('click', toggleSidebar);
+        }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebarBackdrop.classList.toggle('visible');
+        }
+
+        function closeSidebarOnMobile() {
+            if (!isDesktop.matches && !sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
         }
 
         function handleSidebarEnter() {
-            clearTimeout(expansionTimeout); // Limpiar cualquier colapso pendiente
+            if (!isDesktop.matches) return;
+            clearTimeout(expansionTimeout);
             expansionTimeout = setTimeout(() => {
-                sidebar.classList.replace('w-20', 'w-72');
-                newChatButton.classList.remove('justify-center');
-                newChatButton.classList.add('gap-3', 'px-4'); // Añadir gap y padding al expandir
-                newChatButtonText.classList.replace('opacity-0', 'opacity-100');
-                newChatButtonText.classList.replace('max-w-0', 'max-w-xs'); // Animar ancho para evitar saltos
-                conversationList.classList.replace('opacity-0', 'opacity-100');
-            }, 300); // Retraso de 0.3 segundos para expandir
+                sidebar.classList.add('expanded');
+            }, 300);
         }
 
         function handleSidebarLeave() {
-            clearTimeout(expansionTimeout); // Cancelar la expansión si el ratón sale antes de tiempo
-            sidebar.classList.replace('w-72', 'w-20');
-            newChatButton.classList.add('justify-center');
-            newChatButton.classList.remove('gap-3', 'px-4'); // Quitar gap y padding al colapsar
-            newChatButtonText.classList.replace('opacity-100', 'opacity-0');
-            newChatButtonText.classList.replace('max-w-xs', 'max-w-0'); // Animar ancho para evitar saltos
-            conversationList.classList.replace('opacity-100', 'opacity-0');
+            if (!isDesktop.matches) return;
+            clearTimeout(expansionTimeout);
+            sidebar.classList.remove('expanded');
         }
         
         function resetChatViewUI() {
@@ -243,7 +302,7 @@
             welcomeScreen.style.display = 'flex';
             animatedInputBar.style.top = '50%';
             animatedInputBar.style.bottom = 'auto';
-            animatedInputBar.style.transform = 'translateX(-50%) translateY(-2.75rem)'; // -translate-y-12
+            animatedInputBar.style.transform = 'translateX(-50%) translateY(-2.75rem)';
             setTimeout(() => { 
                 welcomeScreen.style.opacity = '1';
                 chatView.style.opacity = '0';
@@ -273,25 +332,21 @@
             saveConversations();
             renderConversationList();
             switchConversation(activeConversationId);
+            closeSidebarOnMobile();
         }
 
         function deleteConversation(idToDelete) {
-            // Filtrar para eliminar la conversación
             conversations = conversations.filter(c => c.id !== idToDelete);
-
-            // Si se eliminó la conversación activa...
             if (activeConversationId === idToDelete) {
-                // ...y todavía hay otras, cambiar a la primera.
                 if (conversations.length > 0) {
                     switchConversation(conversations[0].id);
                 } else {
-                    // ...si era la última, iniciar una nueva.
                     startNewConversation();
                 }
             }
-            
             saveConversations();
             renderConversationList();
+            closeSidebarOnMobile();
         }
 
         function switchConversation(id) {
@@ -305,8 +360,6 @@
                 welcomeScreen.style.display = 'none';
                 chatView.style.opacity = '1';
                 chatView.style.pointerEvents = 'auto';
-                
-                // Asegurarse de que la barra de input esté en la posición de chat
                 animatedInputBar.style.top = 'auto';
                 animatedInputBar.style.bottom = '1.5rem';
                 animatedInputBar.style.transform = 'translateX(-50%) translateY(0)';
@@ -314,6 +367,7 @@
                 resetChatViewUI();
             }
             renderConversationList();
+            closeSidebarOnMobile();
         }
 
         function renderConversationList() {
@@ -321,21 +375,21 @@
             conversations.forEach(convo => {
                 const container = document.createElement('div');
                 container.className = `w-full flex items-center rounded-lg transition-colors hover:bg-white/10 conversation-container ${convo.id === activeConversationId ? 'active' : ''}`;
-
+                
                 const switchButton = document.createElement('button');
                 switchButton.className = 'flex-grow text-left p-3 conversation-item';
                 switchButton.textContent = convo.title;
                 switchButton.onclick = () => switchConversation(convo.id);
 
                 const deleteButton = document.createElement('button');
-                deleteButton.className = 'p-3 text-gray-400 hover:text-white transition-colors flex-shrink-0';
+                deleteButton.className = 'p-3 text-gray-400 hover:text-white transition-colors flex-shrink-0 conversation-delete-button';
                 deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
                 deleteButton.title = 'Eliminar conversación';
                 deleteButton.onclick = (event) => {
-                    event.stopPropagation(); // Evita que se active el switchConversation
+                    event.stopPropagation();
                     deleteConversation(convo.id);
                 };
-                
+
                 container.appendChild(switchButton);
                 container.appendChild(deleteButton);
                 conversationList.appendChild(container);
@@ -345,17 +399,13 @@
         function handleUserMessage() {
             const message = chatInput.value.trim();
             if (message === '') return;
-            
             const currentConvo = conversations.find(c => c.id === activeConversationId);
             const isFirstMessage = currentConvo && currentConvo.messages.length === 0;
-
             if (isFirstMessage) {
-                // Iniciar animación de la UI
                 welcomeScreen.style.opacity = '0';
                 animatedInputBar.style.top = 'auto';
                 animatedInputBar.style.bottom = '1.5rem';
                 animatedInputBar.style.transform = 'translateX(-50%) translateY(0)';
-                
                 setTimeout(() => {
                     welcomeScreen.style.display = 'none';
                     chatView.style.opacity = '1';
@@ -369,36 +419,28 @@
 
         async function sendMessage(message) {
             addMessage(message, 'user');
-            
             const conversation = conversations.find(c => c.id === activeConversationId);
-            if (conversation.messages.length === 1) { // Era el primer mensaje
+            if (conversation.messages.length === 1) {
                 conversation.title = message;
                 renderConversationList();
             }
-
             chatInput.value = '';
             updateSendIcon();
             showTypingIndicator();
-
             try {
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: message })
                 });
-
                 removeTypingIndicator();
-
                 if (!response.ok) throw new Error(`Error del Webhook: ${response.statusText}`);
-                
                 const data = await response.json();
-                
                 if (data.response) {
                     addMessage(data.response, 'betel');
                 } else {
                     addMessage('Hubo un error al procesar la respuesta.', 'betel');
                 }
-
             } catch (error) {
                 console.error('Error al contactar el webhook:', error);
                 removeTypingIndicator();
@@ -412,7 +454,6 @@
             bubble.className = `chat-bubble glass-effect ${type === 'user' ? 'chat-bubble-user' : 'chat-bubble-betel'}`;
             chatHistory.appendChild(bubble);
             chatHistory.scrollTop = chatHistory.scrollHeight;
-
             if (shouldSave) {
                 const conversation = conversations.find(c => c.id === activeConversationId);
                 if(conversation) {
